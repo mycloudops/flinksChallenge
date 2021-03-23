@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: flinks
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flinks
+  namespace: flinks
+  labels:
+    uri: challenge.domain.local
+spec:
+  selector:
+    matchLabels:
+      uri: challenge.domain.local
+  template:
+    metadata:
+      labels:
+        uri: challenge.domain.local
+    spec:
+      containers:
+        - name: nginx
+          image: localhost:32000/mynginx:latest
+          ports:
+            - containerPort: 80
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: flinks
+  name: ingress-flinks
+spec:
+  rules:
+  - host: challenge.domain.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ingress-flinks
+            port:
+              number: 80
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: flinks
+  name: flinks
+spec:
+  selector:
+    uri: challenge.domain.local
+  type: LoadBalancer
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+      nodePort: 32512
